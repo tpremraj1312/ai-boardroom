@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-board-bg text-board-textMain font-sans antialiased selection:bg-board-primary selection:text-white;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-board-heading font-semibold;
+  }
+
+  label {
+    @apply font-medium text-board-textMain;
+  }
+
+  p {
+    @apply font-normal;
+  }
+}
+
+@layer utilities {
+  .shadow-minimal {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Custom Scrollbar for minimalistic look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E9ECEF;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}
