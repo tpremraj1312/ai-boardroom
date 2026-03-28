@@ -31,6 +31,15 @@
   .shadow-minimal {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Custom Scrollbar for minimalistic look */

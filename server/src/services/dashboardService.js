@@ -43,7 +43,14 @@ const getDefaultDashboardData = (industry) => {
       fundingTimeline: [{ milestone: "MVP", target: "Q1", amount: "₹0" }],
       topConcerns: [{ concern: "Market Risk", severity: "High", mitigation: "TBD" }],
       pitchChecklist: [{ item: "Value Prop", status: "partial" }]
-    }
+    },
+    topFiveDecisions: [
+      "Decision 1: Pending analysis...",
+      "Decision 2: Pending analysis...",
+      "Decision 3: Pending analysis...",
+      "Decision 4: Pending analysis...",
+      "Decision 5: Pending analysis..."
+    ]
   };
 };
 
@@ -105,7 +112,8 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
     "fundingTimeline": [{ "milestone": "string", "target": "string", "amount": "string" }],
     "topConcerns": [{ "concern": "string", "severity": "High|Medium|Low", "mitigation": "string" }],
     "pitchChecklist": [{ "item": "string", "status": "complete|incomplete|partial" }]
-  }
+  },
+  "topFiveDecisions": ["string — exactly 5 direct, actionable decisions user must make next"]
 }
 
 Use realistic numbers based on Indian market benchmarks for ${session.inputData.industry}. All monetary values MUST be in Indian Rupees (₹). Monthly projections should cover 12 months starting from Month 1.`;

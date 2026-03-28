@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js';
 import sessionRoutes from './routes/sessions.js';
 import boardroomRoutes from './routes/boardroom.js';
 import dashboardRoutes from './routes/dashboard.js';
+import cofounderRoutes from './routes/cofounder.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,7 @@ app.use('/api/documents', (await import('./routes/documents.js')).default);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/boardroom', boardroomRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/co-founder', cofounderRoutes);
 
 // ── HEALTH CHECK ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

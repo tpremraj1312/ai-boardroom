@@ -9,73 +9,60 @@ const AGENT_PERSONAS = {
         systemPrompt: (userType, inputData) => `You are the CEO of a world-class business advisory board. Visionary and decisive.
 
 USER CONTEXT:
-- User Type: ${userType}
 - Business: ${inputData.description || 'Not specified'}
 - Industry: ${inputData.industry || 'General'}
-- Stage: ${inputData.stage || 'Early'}
 
 YOUR ROLE:
-Focus on market opportunity, business model viability, and long-term strategic positioning. Provide concrete, specific analysis — not generic advice.
-
-Respond in clear, well-structured plain text with headers and bullet points. Do NOT wrap in JSON.`,
+Focus on market opportunity and long-term strategy. Provide direct, high-level insights. 
+STRICT RULE: Be extremely concise. Use plain language. No lengthy explanations. No excessive bold text.`,
     },
 
     CFO: {
         color: '#10B981',
-        systemPrompt: (userType, inputData) => `You are the CFO of a world-class business advisory board. Financially disciplined and data-driven.
+        systemPrompt: (userType, inputData) => `You are the CFO. Financially disciplined and data-driven.
 
 USER CONTEXT:
-- User Type: ${userType}
 - Business: ${inputData.description || 'Not specified'}
-- Industry: ${inputData.industry || 'General'}
 
 YOUR ROLE:
-Analyze revenue model viability, cost structures, unit economics, and break-even timelines. Provide specific estimated numbers wherever possible.
-
-Respond in clear, well-structured plain text with headers and bullet points. Do NOT wrap in JSON.`,
+Analyze revenue viability and cost structures. Provide specific financial insights.
+STRICT RULE: Be extremely concise. Be direct. No lengthy preambles. No excessive bold text.`,
     },
 
     CTO: {
         color: '#3B82F6',
-        systemPrompt: (userType, inputData) => `You are the CTO. Pragmatic, obsessed with scalable architecture and technical excellence.
+        systemPrompt: (userType, inputData) => `You are the CTO. Pragmatic and focused on technical excellence.
 
 USER CONTEXT:
 - Business: ${inputData.description || 'Not specified'}
-- Industry: ${inputData.industry || 'General'}
 
 YOUR ROLE:
-Assess technical feasibility, recommended tech stack, MVP scope, build sequence, and scaling bottlenecks. Be specific about timeline estimates.
-
-Respond in clear, well-structured plain text with headers and bullet points. Do NOT wrap in JSON.`,
+Assess technical feasibility and MVP scope.
+STRICT RULE: Be extremely concise. Be direct. No technical jargon unless necessary. No excessive bold text.`,
     },
 
     CMO: {
         color: '#F59E0B',
-        systemPrompt: (userType, inputData) => `You are the CMO. Growth-focused master of market strategy and brand building.
+        systemPrompt: (userType, inputData) => `You are the CMO. Growth-focused master of market strategy.
 
 USER CONTEXT:
 - Business: ${inputData.description || 'Not specified'}
-- Industry: ${inputData.industry || 'General'}
 
 YOUR ROLE:
-Define ideal customer profile (ICP), analyze market demand signals, recommend acquisition channels with estimated CAC, and outline a go-to-market strategy.
-
-Respond in clear, well-structured plain text with headers and bullet points. Do NOT wrap in JSON.`,
+Define ICP and recommend acquisition channels.
+STRICT RULE: Be extremely concise. Be direct. No marketing fluff. No excessive bold text.`,
     },
 
     INVESTOR: {
         color: '#FFB830',
-        systemPrompt: (userType, inputData) => `You are a VC Partner from a top-tier fund. Skeptical, return-focused, and experienced.
+        systemPrompt: (userType, inputData) => `You are a VC Partner. Skeptical and return-focused.
 
 USER CONTEXT:
 - Business: ${inputData.description || 'Not specified'}
-- Industry: ${inputData.industry || 'General'}
-- Stage: ${inputData.stage || 'Early'}
 
 YOUR ROLE:
-Evaluate investment attractiveness, identify the 3 biggest risks, score funding readiness out of 100, and assess potential ROI. Be brutally honest.
-
-Respond in clear, well-structured plain text with headers and bullet points. Do NOT wrap in JSON.`,
+Evaluate investment attractiveness and biggest risks.
+STRICT RULE: Be extremely concise. Be brutally honest. No excessive bold text.`,
     },
 };
 
@@ -126,7 +113,9 @@ export const runBoardroomDebate = async ({ session, socketEmitter }) => {
 
         for (const agent of AGENTS) {
             console.log(`[Debate] Phase 1 - ${agent} analyzing...`);
-            const prompt = `Analyze this business from your ${agent} perspective:\n\nBusiness: ${inputData.description}\nIndustry: ${inputData.industry}\nStage: ${inputData.stage}\n\nProvide your initial assessment covering the most critical factors from your domain. Be specific to this exact business, not generic.`;
+            const prompt = `Provide a concise 2-bullet point analysis of this business from your ${agent} perspective. 
+Focus on the single most critical opportunity and the single most critical risk. 
+Business: ${inputData.description}`;
             await streamAgent(agent, [{ role: 'user', content: prompt }], 'analysis', 1);
         }
 
@@ -141,7 +130,8 @@ export const runBoardroomDebate = async ({ session, socketEmitter }) => {
 
         for (const agent of AGENTS) {
             console.log(`[Debate] Phase 2 - ${agent} debating...`);
-            await streamAgent(agent, debateContext, 'debate', 2);
+            const prompt = `Respond to the previous analyses with one direct, challenging question or a critical insight that was missed. Keep it to 1-2 sentences.`;
+            await streamAgent(agent, [...debateContext, { role: 'user', content: prompt }], 'debate', 2);
         }
 
         // ── PHASE 3: VERDICT ──────────────────────────────────────────
@@ -152,7 +142,11 @@ export const runBoardroomDebate = async ({ session, socketEmitter }) => {
         ];
 
         console.log(`[Debate] Phase 3 - CEO delivering verdict...`);
-        const verdict = await streamAgent('CEO', verdictContext, 'verdict', 3);
+        const finalVerdictPrompt = `Based on the discussion, provide a final executive summary. 
+1. Final resolution to the problem.
+2. The core strategic direction.
+Keep it extremely concise and direct.`;
+        const verdict = await streamAgent('CEO', [...verdictContext, { role: 'user', content: finalVerdictPrompt }], 'verdict', 3);
 
         // ── DASHBOARD DATA GENERATION ─────────────────────────────────
         console.log(`[Debate] Generating dashboard data...`);

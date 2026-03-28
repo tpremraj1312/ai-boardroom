@@ -12,6 +12,7 @@ import Boardroom from './pages/Boardroom';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import Analytics from './pages/Analytics';
 import TeamManagement from './pages/TeamManagement';
+import CoFounder from './pages/CoFounder';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuthStore();
@@ -60,6 +61,12 @@ const App = () => {
                 <Route path="/team" element={
                     <ProtectedRoute>
                         <PageWrapper><TeamManagement /></PageWrapper>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/co-founder" element={
+                    <ProtectedRoute>
+                        <PageWrapper><CoFounder /></PageWrapper>
                     </ProtectedRoute>
                 } />
 
