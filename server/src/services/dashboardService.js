@@ -54,18 +54,26 @@ const getDefaultDashboardData = (industry) => {
   };
 };
 
-export const generateDashboardData = async ({ session, messageHistory, verdict }) => {
-  const prompt = `You are generating a dashboard for this specific business: "${session.inputData.description}".
-The user is a ${session.userType} in the ${session.inputData.industry} industry.
+export const generateDashboardData = async ({ session, messageHistory, verdict, intent }) => {
+  const prompt = `You are generating a strategic dashboard for this specific business: "${session.inputData.description}".
+The user is a ${session.userType} in the ${session.inputData.industry} industry at ${session.inputData.stage || 'early'} stage.
+The board's detected intent for this session was: ${intent || 'VALIDATE'}.
+Goals: ${session.inputData.goals || 'General strategic guidance'}
+
+The board's final verdict was:
+${verdict}
 
 CRITICAL RULES:
 1. ALL monetary values MUST use Indian Rupees with the ₹ symbol (e.g. "₹50L", "₹2Cr"). NEVER use $ or USD.
-2. Do NOT hallucinate. Only generate data that is directly relevant to the business described above.
+2. Do NOT hallucinate. Only generate data directly relevant to the business described above.
 3. Use realistic Indian market benchmarks for the ${session.inputData.industry} industry.
-4. Keep all text concise and directly applicable to the user's specific business.
+4. Keep all text concise. No excessive bold formatting.
+5. The "topFiveDecisions" MUST be exactly 5 actionable, specific decisions the founder must make immediately.
+6. The "boardVerdict" must reflect the board's GO/NO-GO decision from the verdict.
 
 Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
 {
+  "boardVerdict": { "decision": "GO|CONDITIONAL_GO|NO_GO", "confidence": number, "reasoning": "string" },
   "businessModel": {
     "valueProp": "string — 1-2 sentence value proposition",
     "revenueStreams": [{ "name": "string", "percentage": number }],
@@ -113,10 +121,11 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact structure:
     "topConcerns": [{ "concern": "string", "severity": "High|Medium|Low", "mitigation": "string" }],
     "pitchChecklist": [{ "item": "string", "status": "complete|incomplete|partial" }]
   },
-  "topFiveDecisions": ["string — exactly 5 direct, actionable decisions user must make next"]
+  "topFiveDecisions": ["string — exactly 5 direct, actionable decisions the founder must execute next"]
 }
 
-Use realistic numbers based on Indian market benchmarks for ${session.inputData.industry}. All monetary values MUST be in Indian Rupees (₹). Monthly projections should cover 12 months starting from Month 1.`;
+Use realistic numbers based on Indian market benchmarks for ${session.inputData.industry}. All monetary values MUST be in Indian Rupees (₹). Monthly projections should cover 12 months.`;
+
 
   const response = await generateAgentResponse({
     systemPrompt: 'You are an elite Indian financial data analyst. You respond ONLY with valid JSON. You EXCLUSIVELY use Indian Rupees (₹) — never USD ($). You never hallucinate — every data point must be grounded in the user\'s business context.',

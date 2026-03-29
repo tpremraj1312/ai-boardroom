@@ -79,7 +79,7 @@ const BoardroomSetup = () => {
             <div className="max-w-2xl mx-auto relative z-10">
                 <div className="text-center mb-10">
                     <Badge step={step} />
-                    <h1 className="text-3xl sm:text-4xl font-bold text-board-heading mt-4">
+                    <h1 className="text-3xl sm:text-4xl font-semibold text-board-heading mt-4">
                         {step === 1 ? 'Define Your Context' : step === 2 ? 'Upload Knowledge Base' : 'Pitch Your Business'}
                     </h1>
                     <p className="text-board-textSecondary mt-2">
@@ -112,7 +112,7 @@ const BoardroomSetup = () => {
                                                     )}
                                                 >
                                                     <span className="text-3xl mb-2">{type.icon}</span>
-                                                    <span className="font-bold text-board-heading text-sm mb-1">{type.label}</span>
+                                                    <span className="font-semibold text-board-heading text-sm mb-1">{type.label}</span>
                                                     <span className="text-xs text-board-textSecondary">{type.description}</span>
                                                 </button>
                                             ))}
@@ -136,7 +136,7 @@ const BoardroomSetup = () => {
                                                 >
                                                     <span className="text-2xl mr-3">{stage.emoji}</span>
                                                     <div>
-                                                        <p className="font-bold text-board-heading text-sm">{stage.label}</p>
+                                                        <p className="font-semibold text-board-heading text-sm">{stage.label}</p>
                                                         <p className="text-xs text-board-textSecondary leading-snug">{stage.description}</p>
                                                     </div>
                                                 </button>
@@ -162,7 +162,7 @@ const BoardroomSetup = () => {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                         </div>
-                                        <h3 className="text-lg font-bold text-board-heading">Upload Pitch Deck or Report</h3>
+                                        <h3 className="text-lg font-semibold text-board-heading">Upload Pitch Deck or Report</h3>
                                         <p className="text-sm text-board-textSecondary mb-6 mt-1 text-center max-w-sm">Provide background context for the AI agents via RAG (Retrieval-Augmented Generation). Supports PDF or TXT.</p>
 
                                         <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-board-primary hover:bg-board-primaryHover">
@@ -260,15 +260,15 @@ const BoardroomSetup = () => {
 // Helper component for setup flow
 const Badge = ({ step }) => (
     <div className="inline-flex items-center justify-center space-x-2 bg-white border border-board-border shadow-minimal rounded-full p-1">
-        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors", step === 1 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
+        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors", step === 1 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
             1
         </div>
         <div className="w-4 h-px bg-board-border"></div>
-        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors", step === 2 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
+        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors", step === 2 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
             2
         </div>
         <div className="w-4 h-px bg-board-border"></div>
-        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors", step === 3 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
+        <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors", step === 3 ? "bg-board-primary text-white" : "text-board-textSecondary hover:bg-board-bgSecondary")}>
             3
         </div>
     </div>

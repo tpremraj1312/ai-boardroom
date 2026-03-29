@@ -13,6 +13,9 @@ import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import Analytics from './pages/Analytics';
 import TeamManagement from './pages/TeamManagement';
 import CoFounder from './pages/CoFounder';
+import AcceptInvite from './pages/AcceptInvite';
+import WebsiteGenerator from './pages/WebsiteGenerator';
+import FullStackGenerator from './pages/FullStackGenerator';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuthStore();
@@ -70,9 +73,26 @@ const App = () => {
                     </ProtectedRoute>
                 } />
 
+                <Route path="/website-generator" element={
+                    <ProtectedRoute>
+                        <PageWrapper><WebsiteGenerator /></PageWrapper>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/project-genesis" element={
+                    <ProtectedRoute>
+                        <PageWrapper><FullStackGenerator /></PageWrapper>
+                    </ProtectedRoute>
+                } />
+
                 {/* Public Share URL */}
                 <Route path="/share/:token" element={
                     <PageWrapper><AnalyticsDashboard isShared={true} /></PageWrapper>
+                } />
+
+                {/* Accept Invite */}
+                <Route path="/invite/:token" element={
+                    <PageWrapper><AcceptInvite /></PageWrapper>
                 } />
 
             </Routes>
