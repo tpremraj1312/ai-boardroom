@@ -11,6 +11,7 @@ import {
     deployProject,
     exportProjectZip
 } from '../controllers/projectController.js';
+import { generateImageCreative, generateVideoCreative, updateBrandKit } from '../controllers/creativeController.js';
 
 const router = express.Router();
 
@@ -33,5 +34,10 @@ router.put('/:id/files', protect, saveFile);
 // Deploy & Export
 router.post('/:id/deploy', protect, deployProject);
 router.get('/:id/export', protect, exportProjectZip);
+
+// AI Ad Creative Studio
+router.post('/:id/creatives/image', protect, generateImageCreative);
+router.post('/:id/creatives/video', protect, generateVideoCreative);
+router.put('/:id/brandKit', protect, updateBrandKit);
 
 export default router;

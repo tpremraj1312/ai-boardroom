@@ -16,6 +16,7 @@ import CoFounder from './pages/CoFounder';
 import AcceptInvite from './pages/AcceptInvite';
 import WebsiteGenerator from './pages/WebsiteGenerator';
 import FullStackGenerator from './pages/FullStackGenerator';
+import AdStudio from './pages/AdStudio';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuthStore();
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
     return (
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<PageWrapper hideNavbar><Login /></PageWrapper>} />
@@ -82,6 +83,12 @@ const App = () => {
                 <Route path="/project-genesis" element={
                     <ProtectedRoute>
                         <PageWrapper><FullStackGenerator /></PageWrapper>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/ad-studio" element={
+                    <ProtectedRoute>
+                        <PageWrapper><AdStudio /></PageWrapper>
                     </ProtectedRoute>
                 } />
 

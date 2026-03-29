@@ -7,11 +7,23 @@ import { getViteReactTailwindTemplate } from '../services/templateService.js';
 import { getChatIterationPrompt } from '../services/prompts/chatIterationPrompt.js';
 import AdmZip from 'adm-zip';
 
+// Helper to determine if query should expand to Team scope
+const getAuthQuery = (req, projectId = null) => {
+    const query = projectId ? { _id: projectId } : {};
+    if (req.user && req.user.teamId) {
+        query.$or = [{ user: req.user._id }, { team: req.user.teamId }];
+    } else {
+        query.user = req.user._id;
+    }
+    return query;
+};
+
 // ── GET all projects ────────────────────────────────────────────
 export const getProjects = async (req, res, next) => {
     try {
-        const projects = await Project.find({ user: req.user._id })
-            .select('name status version deployedUrl theme createdAt updatedAt')
+        const projects = await Project.find(getAuthQuery(req))
+            .select('name status version deployedUrl theme createdAt updatedAt team user')
+            .populate('user', 'name')
             .sort({ updatedAt: -1 });
         res.status(200).json(projects);
     } catch (error) {
@@ -22,7 +34,7 @@ export const getProjects = async (req, res, next) => {
 // ── GET single project ──────────────────────────────────────────
 export const getProjectById = async (req, res, next) => {
     try {
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
         if (!project) return res.status(404).json({ message: 'Project not found' });
         res.status(200).json(project);
     } catch (error) {
@@ -40,6 +52,7 @@ export const createProject = async (req, res, next) => {
 
         const newProject = await Project.create({
             user: req.user._id,
+            team: req.user.teamId || null,
             name,
             prompt,
             theme: theme || 'modern',
@@ -60,7 +73,7 @@ export const createProject = async (req, res, next) => {
 // ── GENERATE BLUEPRINT (Step 1) ─────────────────────────────────
 export const generateProjectBlueprint = async (req, res, next) => {
     try {
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
         if (!project) return res.status(404).json({ message: 'Project not found' });
 
         project.status = 'generating-blueprint';
@@ -92,7 +105,7 @@ export const generateProjectBlueprint = async (req, res, next) => {
 // ── GENERATE CODE (Step 2) ──────────────────────────────────────
 export const generateProjectCode = async (req, res, next) => {
     try {
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
         if (!project) return res.status(404).json({ message: 'Project not found' });
         if (!project.blueprint) return res.status(400).json({ message: 'Generate blueprint first.' });
 
@@ -130,7 +143,7 @@ export const generateProjectCode = async (req, res, next) => {
 export const chatProject = async (req, res, next) => {
     try {
         const { message } = req.body;
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
 
         if (!project) return res.status(404).json({ message: 'Project not found' });
         if (!message) return res.status(400).json({ message: 'Message is required' });
@@ -190,7 +203,7 @@ export const chatProject = async (req, res, next) => {
 export const saveFile = async (req, res, next) => {
     try {
         const { filePath, content } = req.body;
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
 
         if (!project) return res.status(404).json({ message: 'Project not found' });
         if (!filePath) return res.status(400).json({ message: 'filePath is required' });
@@ -209,7 +222,7 @@ export const saveFile = async (req, res, next) => {
 // ── DEPLOY to Vercel ────────────────────────────────────────────
 export const deployProject = async (req, res, next) => {
     try {
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
         if (!project) return res.status(404).json({ message: 'Project not found' });
 
         if (!project.fileSystem || Object.keys(project.fileSystem).length === 0) {
@@ -244,7 +257,7 @@ export const deployProject = async (req, res, next) => {
 // ── EXPORT as ZIP ───────────────────────────────────────────────
 export const exportProjectZip = async (req, res, next) => {
     try {
-        const project = await Project.findOne({ _id: req.params.id, user: req.user._id });
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
         if (!project) return res.status(404).json({ message: 'Project not found' });
 
         const zip = new AdmZip();

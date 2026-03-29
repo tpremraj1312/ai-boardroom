@@ -11,6 +11,7 @@ const useProjectStore = create((set, get) => ({
     unsavedFiles: new Set(),
     isLoading: false,
     generationPhase: 'idle', // idle | blueprint | codegen | deploying
+    isGeneratingCreative: false,
     error: null,
     previewKey: 0,
 
@@ -248,6 +249,44 @@ const useProjectStore = create((set, get) => ({
             window.URL.revokeObjectURL(url);
         } catch (err) {
             set({ error: 'Failed to export ZIP' });
+        }
+    },
+
+    // ── AI Ad Creative Studio ──────────────────────
+    generateCreative: async (type, template, style, { designSettings, contentDetails, customPrompt } = {}) => {
+        const { activeProject } = get();
+        if (!activeProject) return;
+
+        set({ isGeneratingCreative: true, error: null });
+        try {
+            const { data } = await api.post(`/projects/${activeProject._id}/creatives/${type}`, {
+                template,
+                style,
+                designSettings: designSettings || {},
+                contentDetails: contentDetails || {},
+                customPrompt: customPrompt || ''
+            });
+            
+            // Backend returns updated activeProject
+            set({ activeProject: data, isGeneratingCreative: false });
+            return data;
+        } catch (err) {
+            set({ isGeneratingCreative: false, error: err.response?.data?.message || `Failed to generate ${type}` });
+            throw err;
+        }
+    },
+
+    updateBrandKit: async (brandKit) => {
+        const { activeProject } = get();
+        if (!activeProject) return;
+
+        try {
+            const { data } = await api.put(`/projects/${activeProject._id}/brandKit`, { brandKit });
+            set({ activeProject: data });
+            return data;
+        } catch (err) {
+            set({ error: err.response?.data?.message || 'Failed to update brand kit' });
+            throw err;
         }
     },
 
