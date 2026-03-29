@@ -39,6 +39,8 @@ export default defineConfig({
                     charts: ['recharts'],
                     motion: ['framer-motion'],
                     socket: ['socket.io-client'],
+                    monaco: ['@monaco-editor/react'],
+                    sandpack: ['@codesandbox/sandpack-react'],
                 }
             }
         }

@@ -42,7 +42,7 @@
   }
 }
 
-/* Custom Scrollbar for minimalistic look */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -59,4 +59,46 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #CBD5E1;
+}
+
+/* ── IDE-specific overrides ─────────────────────── */
+
+/* Sandpack container fills its parent */
+.sp-wrapper,
+.sp-layout,
+.sp-preview-container,
+.sp-preview-iframe {
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.sp-layout {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.sp-preview-container {
+  flex: 1 !important;
+}
+
+/* Hide Sandpack editor pane (we use Monaco) */
+.sp-code-editor {
+  display: none !important;
+}
+
+/* Panel resize handle hover effect */
+[data-panel-resize-handle-id]:hover {
+  background-color: rgba(37, 99, 235, 0.15);
+  transition: background-color 0.15s;
+}
+
+[data-panel-resize-handle-id]:active {
+  background-color: rgba(37, 99, 235, 0.3);
+}
+
+/* Monaco light theme text fix */
+.monaco-editor .margin,
+.monaco-editor .monaco-editor-background {
+  background-color: #FFFFFF !important;
 }
