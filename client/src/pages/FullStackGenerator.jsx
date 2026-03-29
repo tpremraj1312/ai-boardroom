@@ -124,7 +124,7 @@ const FullStackGenerator = () => {
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0 center', backgroundRepeat: 'no-repeat', backgroundSize: '16px' }}
                     >
                         {projects.map(p => (
-                            <option key={p._id} value={p._id}>{p.name}</option>
+                            <option key={p._id} value={p._id}>{p.team ? 'Team — ' : ''}{p.name}</option>
                         ))}
                         <option value="__new__">+ New Project</option>
                     </select>

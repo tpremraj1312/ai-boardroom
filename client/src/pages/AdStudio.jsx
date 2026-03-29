@@ -45,7 +45,7 @@ const AdStudio = () => {
                             >
                                 <option value="">Select a project...</option>
                                 {projects.map(p => (
-                                    <option key={p._id} value={p._id}>{p.name}</option>
+                                    <option key={p._id} value={p._id}>{p.team ? 'Team — ' : ''}{p.name}</option>
                                 ))}
                             </select>
                         </div>
