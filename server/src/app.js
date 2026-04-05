@@ -18,21 +18,6 @@ import { errorHandler, notFound } from './middleware/errorHandler.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// ── SECURITY MIDDLEWARE (ORDER MATTERS) ──────────────────────────
-// 1. Helmet: sets secure HTTP headers
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-            fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", 'data:', 'https:'],
-        }
-    },
-    crossOriginEmbedderPolicy: false
-}));
-
 // 2. CORS — Allow localhost and deployed frontend
 const allowedOrigins = [
     'http://localhost:5173',
@@ -54,6 +39,24 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+
+
+// ── SECURITY MIDDLEWARE (ORDER MATTERS) ──────────────────────────
+// 1. Helmet: sets secure HTTP headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+        }
+    },
+    crossOriginEmbedderPolicy: false
+}));
+
+
 
 // 3. Body parsers with size limits
 app.use(express.json({ limit: '50mb' }));
