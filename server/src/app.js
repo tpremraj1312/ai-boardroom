@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -59,6 +60,20 @@ app.use(hpp());
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
+
+// ---- Lazy MongoDB connection (for Vercel serverless) ----
+let isDbConnected = false;
+app.use(async (req, res, next) => {
+    if (!isDbConnected && process.env.MONGODB_URI) {
+        try {
+            await mongoose.connect(process.env.MONGODB_URI);
+            isDbConnected = true;
+        } catch (err) {
+            console.error('MongoDB connection error:', err.message);
+        }
+    }
+    next();
+});
 
 // ---- Routes ----
 app.use('/api/auth', authRoutes);
