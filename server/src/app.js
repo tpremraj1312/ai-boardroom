@@ -33,9 +33,23 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// 2. CORS — only allow defined origin
+// 2. CORS — Allow localhost and deployed frontend
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://ai-boardroom-fawn.vercel.app',
+    process.env.CORS_ORIGIN
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        // or requests from our allowed origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
