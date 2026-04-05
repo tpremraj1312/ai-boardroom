@@ -11,6 +11,10 @@ import sessionRoutes from './routes/sessions.js';
 import boardroomRoutes from './routes/boardroom.js';
 import dashboardRoutes from './routes/dashboard.js';
 import cofounderRoutes from './routes/cofounder.js';
+import teamRoutes from './routes/teams.js';
+import documentRoutes from './routes/documents.js';
+import websiteRoutes from './routes/websites.js';
+import projectRoutes from './routes/projects.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 const app = express();
@@ -62,10 +66,10 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/boardroom', boardroomRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/co-founder', cofounderRoutes);
-app.use('/api/teams', (await import('./routes/teams.js')).default);
-app.use('/api/documents', (await import('./routes/documents.js')).default);
-app.use('/api/websites', (await import('./routes/websites.js')).default);
-app.use('/api/projects', (await import('./routes/projects.js')).default);
+app.use('/api/teams', teamRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/websites', websiteRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Health check
 app.get('/api/health', (req, res) =>
