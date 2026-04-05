@@ -62,6 +62,10 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/boardroom', boardroomRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/co-founder', cofounderRoutes);
+app.use('/api/teams', (await import('./routes/teams.js')).default);
+app.use('/api/documents', (await import('./routes/documents.js')).default);
+app.use('/api/websites', (await import('./routes/websites.js')).default);
+app.use('/api/projects', (await import('./routes/projects.js')).default);
 
 // Health check
 app.get('/api/health', (req, res) =>
