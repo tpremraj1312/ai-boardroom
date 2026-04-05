@@ -1,8 +1,4 @@
 import Document from '../models/Document.js';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const pdfParse = require('pdf-parse');
 import { generateEmbeddings, chunkText } from '../ai/rag.js';
 
 export const uploadDocument = async (req, res, next) => {
@@ -16,6 +12,15 @@ export const uploadDocument = async (req, res, next) => {
 
         // Extract text based on file type
         if (req.file.mimetype === 'application/pdf') {
+            // Lazy import to avoid @napi-rs/canvas crash on Vercel serverless
+            const { createRequire } = await import('module');
+            const require = createRequire(import.meta.url);
+            let pdfParse;
+            try {
+                pdfParse = require('pdf-parse');
+            } catch (e) {
+                return res.status(500).json({ message: 'PDF parsing is not available in this environment.' });
+            }
             const pdfData = await pdfParse(req.file.buffer);
             textContent = pdfData.text;
         } else if (req.file.mimetype.includes('text') || req.file.mimetype === 'application/json') {
@@ -28,8 +33,6 @@ export const uploadDocument = async (req, res, next) => {
         const chunks = chunkText(textContent);
         const docsToSave = [];
 
-        // For simplicity in this demo, we'll embed the first major chunk or the entire summary if small enough.
-        // In strict production, we loop and save multiple chunks.
         for (let i = 0; i < Math.min(chunks.length, 5); i++) {
             const vector = await generateEmbeddings(chunks[i]);
             docsToSave.push({
@@ -60,7 +63,7 @@ export const uploadDocument = async (req, res, next) => {
 export const getSessionDocuments = async (req, res, next) => {
     try {
         const docs = await Document.find({ sessionId: req.params.sessionId })
-            .select('-embeddings') // Exclude heavy vectors
+            .select('-embeddings')
             .sort({ chunkIndex: 1 });
 
         res.json(docs);
@@ -68,3 +71,4 @@ export const getSessionDocuments = async (req, res, next) => {
         next(error);
     }
 };
+
