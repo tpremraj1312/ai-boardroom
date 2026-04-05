@@ -75,6 +75,7 @@ export const deployToVercel = async (project) => {
             'https://api.vercel.com/v13/deployments',
             {
                 name: projectName,
+                target: "production",
                 files: files.map(f => ({
                     file: f.file,
                     data: Buffer.from(f.data).toString('base64'),
