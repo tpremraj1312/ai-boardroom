@@ -19,24 +19,24 @@ import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 const app = express();
 
-// ---- CORS FIRST (Fixes your issue) ----
+// ---- CORS FIRST ----
 const allowedOrigins = [
     'http://localhost:5173',
     'https://ai-boardroom-fawn.vercel.app',
     process.env.CORS_ORIGIN,
 ].filter(Boolean);
 
-app.use(
-    cors({
-        origin: allowedOrigins,
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    })
-);
+const corsOptions = {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-CSRF-Token', 'X-Requested-With', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Date', 'X-Api-Version'],
+};
 
-// Preflight handling globally
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Preflight handling globally — uses SAME config
+app.options('*', cors(corsOptions));
 
 // ---- Helmet (CSP disabled to avoid blocking preflight) ----
 app.use(
