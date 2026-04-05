@@ -17,6 +17,7 @@ import AcceptInvite from './pages/AcceptInvite';
 import WebsiteGenerator from './pages/WebsiteGenerator';
 import FullStackGenerator from './pages/FullStackGenerator';
 import AdStudio from './pages/AdStudio';
+import AdConsole from './pages/AdConsole';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuthStore();
@@ -89,6 +90,12 @@ const App = () => {
                 <Route path="/ad-studio" element={
                     <ProtectedRoute>
                         <PageWrapper><AdStudio /></PageWrapper>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/ad-console" element={
+                    <ProtectedRoute>
+                        <PageWrapper><AdConsole /></PageWrapper>
                     </ProtectedRoute>
                 } />
 

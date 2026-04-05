@@ -1,14 +1,14 @@
 import React from 'react';
 
-const StatusBar = ({ activeFile, fileSystem, version, generationPhase, deployedUrl }) => {
+const StatusBar = ({ activeFile, fileSystem, version, generationPhase, deployedUrl, validationPassed }) => {
     const fileCount = fileSystem ? Object.keys(fileSystem).length : 0;
     const language = activeFile ? getLanguageLabel(activeFile) : '';
 
     const statusLabels = {
         idle: null,
-        blueprint: 'Generating blueprint...',
-        codegen: 'Generating code...',
-        deploying: 'Deploying...'
+        blueprint: 'Stage 1: Generating blueprint...',
+        codegen: 'Stage 2→4→5: Building + Debugging + Walkthrough...',
+        deploying: 'Stage 6: Deploying...'
     };
 
     const statusText = statusLabels[generationPhase];
@@ -39,10 +39,30 @@ const StatusBar = ({ activeFile, fileSystem, version, generationPhase, deployedU
                 )}
                 <span>{fileCount} files</span>
                 {version > 1 && <span>v{version}</span>}
+
+                {/* Validation Status */}
+                {validationPassed !== undefined && validationPassed !== null && (
+                    <span className={`flex items-center gap-1 ${validationPassed ? 'text-emerald-500' : 'text-amber-500'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${validationPassed ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                        {validationPassed ? 'Checks passed' : 'Issues found'}
+                    </span>
+                )}
             </div>
 
             {/* Right */}
             <div className="flex items-center gap-3">
+                {/* Pipeline indicator */}
+                {!statusText && fileCount > 0 && (
+                    <span className="flex items-center gap-1.5 text-gray-400">
+                        <span className="text-[10px]">Pipeline:</span>
+                        <span className="flex items-center gap-0.5">
+                            <span className="w-1 h-1 rounded-full bg-emerald-400" title="Stage 1: Blueprint"></span>
+                            <span className="w-1 h-1 rounded-full bg-emerald-400" title="Stage 2: Codegen"></span>
+                            <span className="w-1 h-1 rounded-full bg-emerald-400" title="Stage 4: Debugger"></span>
+                            <span className="w-1 h-1 rounded-full bg-emerald-400" title="Stage 5: Walkthrough"></span>
+                        </span>
+                    </span>
+                )}
                 {language && <span>{language}</span>}
                 <span>UTF-8</span>
             </div>

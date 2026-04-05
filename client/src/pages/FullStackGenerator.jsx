@@ -6,6 +6,7 @@ import CodeEditorPanel from '../components/ide/CodeEditor';
 import LivePreview from '../components/ide/LivePreview';
 import ChatPanel from '../components/ide/ChatPanel';
 import BlueprintView from '../components/ide/BlueprintView';
+import WalkthroughView from '../components/ide/WalkthroughView';
 import ProjectCreation from '../components/ide/ProjectCreation';
 import StatusBar from '../components/ide/StatusBar';
 
@@ -13,13 +14,15 @@ const FullStackGenerator = () => {
     const {
         projects, activeProject, activeFile, fileContent, openFiles, unsavedFiles,
         isLoading, generationPhase, error, previewKey,
+        isRegeneratingWalkthrough, isRevalidating, isDebugging,
         fetchProjects, createProject, loadProject, generateBlueprint, generateCode,
         sendMessage, selectFile, closeFile, updateFileContent, saveCurrentFile,
-        deploy, exportZip, clearError
+        deploy, exportZip, clearError,
+        fetchWalkthrough, regenerateWalkthrough, revalidate, rerunDebugger
     } = useProjectStore();
 
     const [showCreation, setShowCreation] = useState(false);
-    const [mainTab, setMainTab] = useState('preview'); // code | preview | blueprint
+    const [mainTab, setMainTab] = useState('preview'); // code | preview | blueprint | walkthrough
 
     useEffect(() => {
         fetchProjects().then(data => {
@@ -33,10 +36,17 @@ const FullStackGenerator = () => {
         if (activeProject) {
             const hasFiles = activeProject.fileSystem && Object.keys(activeProject.fileSystem).length > 0;
             const hasBlueprint = !!activeProject.blueprint;
-            if (hasFiles) setMainTab('preview'); // preview first after files exist
+            if (hasFiles) setMainTab('preview');
             else if (hasBlueprint) setMainTab('blueprint');
         }
     }, [activeProject?.blueprint, activeProject?.fileSystem]);
+
+    // Fetch walkthrough data when project loads
+    useEffect(() => {
+        if (activeProject?.walkthrough === undefined && activeProject?._id) {
+            fetchWalkthrough();
+        }
+    }, [activeProject?._id]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -72,17 +82,21 @@ const FullStackGenerator = () => {
     const handleSendMessage = useCallback(async (msg) => {
         try {
             await sendMessage(msg);
-            setMainTab('preview'); // Usually want to see preview after chat changes code
+            setMainTab('preview');
         } catch (err) { /* handled by store */ }
     }, [sendMessage]);
 
     const handleDeploy = useCallback(async () => {
-        try {
-            await deploy();
-        } catch (err) {
-            // Error handled by store
-        }
+        try { await deploy(); } catch (err) { /* handled by store */ }
     }, [deploy]);
+
+    const handleRegenerateWalkthrough = useCallback(async () => {
+        try { await regenerateWalkthrough(); } catch (err) { /* handled by store */ }
+    }, [regenerateWalkthrough]);
+
+    const handleRerunDebugger = useCallback(async () => {
+        try { await rerunDebugger(); } catch (err) { /* handled by store */ }
+    }, [rerunDebugger]);
 
     // ── Show creation form if no project ──
     if (showCreation || (!activeProject && !isLoading)) {
@@ -100,7 +114,12 @@ const FullStackGenerator = () => {
 
     const hasFiles = activeProject?.fileSystem && Object.keys(activeProject.fileSystem).length > 0;
     const hasBlueprint = !!activeProject?.blueprint;
+    const hasWalkthrough = !!activeProject?.walkthrough;
+    const hasValidation = !!activeProject?.validationReport;
     const isGenerating = generationPhase !== 'idle';
+
+    // Validation status indicator
+    const validationStatus = activeProject?.validationReport?.passed;
 
     return (
         <div className="flex h-[calc(100vh-theme(spacing.16))] bg-white overflow-hidden text-board-textMain font-normal">
@@ -153,7 +172,7 @@ const FullStackGenerator = () => {
                                 onClick={() => setMainTab('blueprint')}
                                 className={`px-3 py-1 rounded-md text-[12px] transition-all flex items-center gap-1.5 ${
                                     mainTab === 'blueprint'
-                                        ? 'bg-white text-board-textMain shadow-sm border border-gray-200/50 text-board-primary'
+                                        ? 'bg-white text-board-primary shadow-sm border border-gray-200/50'
                                         : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
@@ -167,7 +186,7 @@ const FullStackGenerator = () => {
                             onClick={() => setMainTab('code')}
                             className={`px-3 py-1 rounded-md text-[12px] transition-all flex items-center gap-1.5 ${
                                 mainTab === 'code'
-                                    ? 'bg-white text-board-textMain shadow-sm border border-gray-200/50 text-board-primary'
+                                    ? 'bg-white text-board-primary shadow-sm border border-gray-200/50'
                                     : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
@@ -180,7 +199,7 @@ const FullStackGenerator = () => {
                             onClick={() => setMainTab('preview')}
                             className={`px-3 py-1 rounded-md text-[12px] transition-all flex items-center gap-1.5 ${
                                 mainTab === 'preview'
-                                    ? 'bg-white text-board-textMain shadow-sm border border-gray-200/50 text-board-primary'
+                                    ? 'bg-white text-board-primary shadow-sm border border-gray-200/50'
                                     : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
@@ -190,6 +209,25 @@ const FullStackGenerator = () => {
                             </svg>
                             Preview
                         </button>
+                        {(hasWalkthrough || hasValidation) && (
+                            <button
+                                onClick={() => setMainTab('walkthrough')}
+                                className={`px-3 py-1 rounded-md text-[12px] transition-all flex items-center gap-1.5 ${
+                                    mainTab === 'walkthrough'
+                                        ? 'bg-white text-board-primary shadow-sm border border-gray-200/50'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                Walkthrough
+                                {/* Validation status dot */}
+                                {hasValidation && (
+                                    <span className={`w-1.5 h-1.5 rounded-full ${validationStatus ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                )}
+                            </button>
+                        )}
                     </div>
 
                     {/* Actions Panel */}
@@ -226,6 +264,23 @@ const FullStackGenerator = () => {
                             </button>
                         )}
 
+                        {/* Rerun Debugger */}
+                        {hasFiles && (
+                            <button
+                                onClick={handleRerunDebugger}
+                                disabled={isGenerating || isDebugging}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-all font-normal disabled:opacity-50"
+                                title="Run Debugger Agent to fix issues"
+                            >
+                                {isDebugging ? (
+                                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                ) : (
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                )}
+                                {isDebugging ? 'Debugging...' : 'Debug'}
+                            </button>
+                        )}
+
                         {/* Save Action */}
                         {unsavedFiles.size > 0 && mainTab === 'code' && (
                             <button
@@ -245,7 +300,7 @@ const FullStackGenerator = () => {
                                 title="Download complete source code"
                             >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                Export Zip
+                                Export
                             </button>
                         )}
 
@@ -276,7 +331,7 @@ const FullStackGenerator = () => {
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-green-600 bg-green-50 border border-green-100 rounded-lg hover:bg-green-100 transition-all font-normal ml-1"
                             >
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                Live App
+                                Live
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                             </a>
                         )}
@@ -338,6 +393,14 @@ const FullStackGenerator = () => {
                                 previewKey={previewKey}
                             />
                         </div>
+                    ) : mainTab === 'walkthrough' ? (
+                        <WalkthroughView
+                            walkthrough={activeProject?.walkthrough}
+                            validationReport={activeProject?.validationReport}
+                            debugLog={activeProject?.debugLog}
+                            onRegenerate={handleRegenerateWalkthrough}
+                            isLoading={isRegeneratingWalkthrough}
+                        />
                     ) : (
                         /* Empty state */
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
@@ -365,6 +428,7 @@ const FullStackGenerator = () => {
                     version={activeProject?.version || 1}
                     generationPhase={generationPhase}
                     deployedUrl={activeProject?.deployedUrl}
+                    validationPassed={validationStatus}
                 />
             </div>
         </div>

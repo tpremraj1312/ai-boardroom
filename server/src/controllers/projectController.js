@@ -2,7 +2,10 @@ import Project from '../models/Project.js';
 import { generateAgentResponse } from '../services/aiService.js';
 import { generateBlueprint } from '../services/blueprintService.js';
 import { generateCodeFromBlueprint } from '../services/codegenService.js';
-import { deployToVercel } from '../services/deployService.js';
+import { runDebuggerAgent } from '../services/debuggerService.js';
+import { generateWalkthrough } from '../services/walkthroughService.js';
+import { validateProject } from '../services/validationService.js';
+import { deployFullStack, deployToVercel } from '../services/deployService.js';
 import { getViteReactTailwindTemplate } from '../services/templateService.js';
 import { getChatIterationPrompt } from '../services/prompts/chatIterationPrompt.js';
 import AdmZip from 'adm-zip';
@@ -70,7 +73,7 @@ export const createProject = async (req, res, next) => {
     }
 };
 
-// ── GENERATE BLUEPRINT (Step 1) ─────────────────────────────────
+// ── GENERATE BLUEPRINT (Stage 1: Architect Agent) ───────────────
 export const generateProjectBlueprint = async (req, res, next) => {
     try {
         const project = await Project.findOne(getAuthQuery(req, req.params.id));
@@ -86,7 +89,7 @@ export const generateProjectBlueprint = async (req, res, next) => {
             project.status = 'idle';
             project.messages.push({
                 role: 'assistant',
-                content: `Blueprint generated! I've planned ${blueprint.frontend?.pages?.length || 0} pages, ${blueprint.frontend?.components?.length || 0} components, ${blueprint.backend?.routes?.length || 0} API routes, and ${blueprint.backend?.models?.length || 0} database models. Review the blueprint and click "Generate Code" when ready.`
+                content: `Blueprint generated! I've planned ${blueprint.file_plan?.length || 0} files, ${blueprint.features?.length || 0} features, and ${blueprint.api_design?.length || 0} API endpoints. Review the blueprint and click "Build App" when ready.`
             });
             await project.save();
 
@@ -102,7 +105,7 @@ export const generateProjectBlueprint = async (req, res, next) => {
     }
 };
 
-// ── GENERATE CODE (Step 2) ──────────────────────────────────────
+// ── GENERATE CODE (Stage 2 + 4 + 5: Engineer → Debugger → Walkthrough) ──
 export const generateProjectCode = async (req, res, next) => {
     try {
         const project = await Project.findOne(getAuthQuery(req, req.params.id));
@@ -113,21 +116,54 @@ export const generateProjectCode = async (req, res, next) => {
         await project.save();
 
         try {
-            const fileSystem = await generateCodeFromBlueprint(project.blueprint, project.prompt);
+            // ── STAGE 2: Engineer Agent — Code Generation ──────────
+            console.log(`[Orchestrator] Stage 2: Generating code for project ${project._id}...`);
+            let fileSystem = await generateCodeFromBlueprint(project.blueprint, project.prompt);
 
+            // ── STAGE 4: Debugger Agent — Validate & Auto-Fix ─────
+            console.log(`[Orchestrator] Stage 4: Running Debugger Agent...`);
+            const debugResult = await runDebuggerAgent(fileSystem, project.blueprint);
+            fileSystem = debugResult.fileSystem;
+
+            // ── STAGE 5: Walkthrough Agent — Documentation ────────
+            console.log(`[Orchestrator] Stage 5: Generating Walkthrough...`);
+            let walkthrough = null;
+            try {
+                walkthrough = await generateWalkthrough(
+                    fileSystem,
+                    project.blueprint,
+                    debugResult.validationReport
+                );
+            } catch (walkErr) {
+                console.error('[Orchestrator] Walkthrough generation failed (non-fatal):', walkErr.message);
+            }
+
+            // ── Persist everything ────────────────────────────────
             project.fileSystem = fileSystem;
             project.status = 'ready';
             project.version += 1;
+            project.validationReport = debugResult.validationReport;
+            project.debugLog = debugResult.debugLog;
+            project.walkthrough = walkthrough;
             project.markModified('fileSystem');
+            project.markModified('validationReport');
+            project.markModified('debugLog');
+            project.markModified('walkthrough');
 
             const fileCount = Object.keys(fileSystem).length;
+            const validationStatus = debugResult.validationReport?.passed
+                ? 'All checks passed.'
+                : `${debugResult.validationReport?.errors || 0} issues remain.`;
+            const walkthroughStatus = walkthrough ? ' Architecture walkthrough generated.' : '';
+
             project.messages.push({
                 role: 'assistant',
-                content: `Code generated! ${fileCount} files created across frontend and backend. You can now edit files, preview the app, or deploy it. Ask me to add features or make changes.`
+                content: `Build complete! ${fileCount} files generated across frontend and backend. Debugger ran ${debugResult.debugCycles} auto-fix cycle(s). ${validationStatus}${walkthroughStatus} You can now edit files, preview, or deploy.`
             });
             await project.save();
 
             res.status(200).json(project);
+
         } catch (aiError) {
             project.status = 'error';
             project.messages.push({ role: 'assistant', content: `Code generation failed: ${aiError.message}` });
@@ -166,7 +202,15 @@ export const chatProject = async (req, res, next) => {
                 messages: [{ role: 'user', content: message }],
                 requireJson: true
             });
-            const cleaned = rawResponse.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+            let cleaned = rawResponse;
+            const jsonStart = cleaned.indexOf('{');
+            const jsonEnd = cleaned.lastIndexOf('}');
+            
+            if (jsonStart !== -1 && jsonEnd !== -1) {
+                cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+            } else {
+                cleaned = cleaned.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+            }
             aiJson = JSON.parse(cleaned);
         } catch (error) {
             console.error('[Chat] AI Parse Error:', error.message);
@@ -186,6 +230,11 @@ export const chatProject = async (req, res, next) => {
             }
             project.markModified('fileSystem');
         }
+
+        // ── Post-chat validation (lightweight) ────────────────────
+        const report = validateProject(project.fileSystem, project.blueprint);
+        project.validationReport = report;
+        project.markModified('validationReport');
 
         const displayReply = aiJson.assistantResponse || 'I have updated your codebase.';
         project.messages.push({ role: 'assistant', content: displayReply });
@@ -219,7 +268,7 @@ export const saveFile = async (req, res, next) => {
     }
 };
 
-// ── DEPLOY to Vercel ────────────────────────────────────────────
+// ── DEPLOY (Full-Stack) ─────────────────────────────────────────
 export const deployProject = async (req, res, next) => {
     try {
         const project = await Project.findOne(getAuthQuery(req, req.params.id));
@@ -233,22 +282,120 @@ export const deployProject = async (req, res, next) => {
         await project.save();
 
         try {
-            const deployment = await deployToVercel(project);
+            // Use full-stack deployment
+            const deployment = await deployFullStack(project);
+
             project.deployedUrl = deployment.url;
             project.status = 'deployed';
-            project.messages.push({
-                role: 'assistant',
-                content: `Deployed successfully! Your app is live at: ${deployment.url}`
-            });
+
+            let deployMsg = '';
+            if (deployment.fullStack) {
+                deployMsg = `Full-stack deployment complete!\n• Frontend: ${deployment.frontend?.url}\n• Backend: ${deployment.backend?.url}\n• Database: auto-provisioned`;
+            } else if (deployment.frontend?.url) {
+                deployMsg = `Frontend deployed successfully! Your app is live at: ${deployment.frontend.url}`;
+                if (deployment.backend?.status === 'skipped') {
+                    deployMsg += '\nNote: Backend deployment skipped (RAILWAY_TOKEN not configured). Add it in .env for full-stack deploy.';
+                }
+            } else {
+                deployMsg = 'Deployment completed with partial success. Check the console for details.';
+            }
+
+            project.messages.push({ role: 'assistant', content: deployMsg });
             await project.save();
 
-            res.status(200).json({ url: deployment.url, project });
+            res.status(200).json({ url: deployment.url, deployment, project });
         } catch (deployError) {
             project.status = 'ready';
             project.messages.push({ role: 'assistant', content: `Deployment failed: ${deployError.message}` });
             await project.save();
             res.status(500).json({ message: deployError.message, project });
         }
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── GET WALKTHROUGH ─────────────────────────────────────────────
+export const getProjectWalkthrough = async (req, res, next) => {
+    try {
+        const project = await Project.findOne(getAuthQuery(req, req.params.id))
+            .select('walkthrough validationReport debugLog name');
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        res.status(200).json({
+            walkthrough: project.walkthrough,
+            validationReport: project.validationReport,
+            debugLog: project.debugLog
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── REGENERATE WALKTHROUGH ──────────────────────────────────────
+export const regenerateWalkthrough = async (req, res, next) => {
+    try {
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!project.fileSystem || Object.keys(project.fileSystem).length === 0) {
+            return res.status(400).json({ message: 'No files to generate walkthrough from.' });
+        }
+
+        const walkthrough = await generateWalkthrough(
+            project.fileSystem,
+            project.blueprint,
+            project.validationReport
+        );
+
+        project.walkthrough = walkthrough;
+        project.markModified('walkthrough');
+        await project.save();
+
+        res.status(200).json({ walkthrough });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── RERUN VALIDATION ────────────────────────────────────────────
+export const revalidateProject = async (req, res, next) => {
+    try {
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const report = validateProject(project.fileSystem, project.blueprint);
+
+        project.validationReport = report;
+        project.markModified('validationReport');
+        await project.save();
+
+        res.status(200).json({ validationReport: report });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── RERUN DEBUGGER ──────────────────────────────────────────────
+export const rerunDebugger = async (req, res, next) => {
+    try {
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!project.fileSystem || Object.keys(project.fileSystem).length === 0) {
+            return res.status(400).json({ message: 'No files to debug.' });
+        }
+
+        const debugResult = await runDebuggerAgent(project.fileSystem, project.blueprint);
+
+        project.fileSystem = debugResult.fileSystem;
+        project.validationReport = debugResult.validationReport;
+        project.debugLog = [...(project.debugLog || []), ...debugResult.debugLog];
+        project.markModified('fileSystem');
+        project.markModified('validationReport');
+        project.markModified('debugLog');
+        project.version += 1;
+        await project.save();
+
+        res.status(200).json(project);
     } catch (error) {
         next(error);
     }
@@ -263,6 +410,20 @@ export const exportProjectZip = async (req, res, next) => {
         const zip = new AdmZip();
         for (const [filepath, content] of Object.entries(project.fileSystem || {})) {
             zip.addFile(filepath, Buffer.from(content, 'utf8'));
+        }
+
+        // Include walkthrough as WALKTHROUGH.md if exists
+        if (project.walkthrough) {
+            let walkthroughMd = `# ${project.walkthrough.title || project.name}\n\n`;
+            if (project.walkthrough.sections) {
+                for (const section of project.walkthrough.sections) {
+                    walkthroughMd += `## ${section.heading}\n\n${section.content}\n\n`;
+                }
+            }
+            if (project.walkthrough.quickStart) {
+                walkthroughMd += `## Quick Start\n\n${project.walkthrough.quickStart}\n`;
+            }
+            zip.addFile('WALKTHROUGH.md', Buffer.from(walkthroughMd, 'utf8'));
         }
 
         const zipBuffer = zip.toBuffer();

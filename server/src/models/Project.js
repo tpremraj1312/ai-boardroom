@@ -42,7 +42,53 @@ const projectSchema = new mongoose.Schema({
         colors: [{ type: String }],
         fonts: [{ type: String }]
     },
-    version: { type: Number, default: 1 }
+    // AI Ad Execution Engine — Campaign tracking
+    campaigns: [{
+        platform: { type: String, enum: ['meta', 'google'], required: true },
+        campaignId: { type: String },
+        adSetId: { type: String },
+        adId: { type: String },
+        creativeId: { type: String },
+        name: { type: String },
+        budget: {
+            daily: { type: Number, default: 0 },
+            total: { type: Number, default: 0 },
+            currency: { type: String, default: 'USD' }
+        },
+        status: {
+            type: String,
+            enum: ['draft', 'active', 'paused', 'completed', 'error'],
+            default: 'draft'
+        },
+        performance: {
+            impressions: { type: Number, default: 0 },
+            clicks: { type: Number, default: 0 },
+            ctr: { type: Number, default: 0 },
+            conversions: { type: Number, default: 0 },
+            spend: { type: Number, default: 0 },
+            cpc: { type: Number, default: 0 },
+            roas: { type: Number, default: 0 }
+        },
+        lastSynced: { type: Date },
+        createdAt: { type: Date, default: Date.now }
+    }],
+    adConfig: {
+        totalBudget: { type: Number, default: 100 },
+        budgetSplit: {
+            meta: { type: Number, default: 60 },
+            google: { type: Number, default: 40 }
+        },
+        autoOptimize: { type: Boolean, default: true },
+        targetAudience: { type: String, default: '' },
+        objective: { type: String, default: 'conversions' }
+    },
+    version: { type: Number, default: 1 },
+    // Walkthrough Agent — post-build documentation
+    walkthrough: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Validation Pipeline — self-check report
+    validationReport: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Debugger Agent — auto-fix log
+    debugLog: [{ type: mongoose.Schema.Types.Mixed }]
 }, { timestamps: true });
 
 export default mongoose.model('Project', projectSchema);

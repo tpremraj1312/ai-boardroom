@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react';
 import Editor from '@monaco-editor/react';
-import { VscClose, VscCircleFilled } from 'react-icons/vsc';
+import { VscClose, VscCircleFilled, VscJson, VscMarkdown, VscCode } from 'react-icons/vsc';
 import { SiJavascript, SiReact } from 'react-icons/si';
-import { VscJson, VscMarkdown, VscCode } from 'react-icons/vsc';
 
 const getLanguage = (filePath) => {
     if (!filePath) return 'plaintext';
@@ -49,7 +48,6 @@ const CodeEditorPanel = ({ activeFile, fileContent, openFiles, unsavedFiles, onC
                     const tabName = file.split('/').pop();
                     const isActive = file === activeFile;
                     const isUnsaved = unsavedFiles?.has?.(file);
-
                     return (
                         <div
                             key={file}
@@ -110,6 +108,7 @@ const CodeEditorPanel = ({ activeFile, fileContent, openFiles, unsavedFiles, onC
                             scrollbar: {
                                 verticalScrollbarSize: 6,
                                 horizontalScrollbarSize: 6,
+                                useShadows: false
                             }
                         }}
                     />
