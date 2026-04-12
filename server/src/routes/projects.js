@@ -4,10 +4,14 @@ import {
     getProjects,
     getProjectById,
     createProject,
+    deleteProject,
     generateProjectBlueprint,
     generateProjectCode,
     chatProject,
     saveFile,
+    createNewFile,
+    deleteFileFromVFS,
+    renameFileInVFS,
     deployProject,
     exportProjectZip,
     getProjectWalkthrough,
@@ -33,7 +37,8 @@ router.route('/')
     .post(protect, createProject);
 
 router.route('/:id')
-    .get(protect, getProjectById);
+    .get(protect, getProjectById)
+    .delete(protect, deleteProject);
 
 // AI Pipeline (Stages 1-5)
 router.post('/:id/generate-blueprint', protect, generateProjectBlueprint);
@@ -42,6 +47,9 @@ router.post('/:id/generate-code', protect, generateProjectCode);
 // Chat & Edit
 router.post('/:id/chat', protect, chatProject);
 router.put('/:id/files', protect, saveFile);
+router.post('/:id/files/create', protect, createNewFile);
+router.delete('/:id/files', protect, deleteFileFromVFS);
+router.patch('/:id/files/rename', protect, renameFileInVFS);
 
 // Orchestrator Agents (Individual re-runs)
 router.get('/:id/walkthrough', protect, getProjectWalkthrough);

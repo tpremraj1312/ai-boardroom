@@ -1,9 +1,52 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const BlueprintView = ({ blueprint, onGenerateCode, isGenerating }) => {
-    if (!blueprint) return null;
+const BlueprintView = ({ blueprint, isGenerating, onGenerateBlueprint, onGenerateCode, hasCode }) => {
+    // ── Empty State: No blueprint yet ─────────────────
+    if (!blueprint) {
+        return (
+            <div className="h-full flex items-center justify-center bg-gray-50/50">
+                <div className="text-center space-y-4 max-w-sm mx-auto px-6">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto border border-indigo-100/50 shadow-sm">
+                        <svg className="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 className="text-base font-medium text-gray-800">No Blueprint Generated</h3>
+                        <p className="text-[13px] text-gray-500 mt-1.5 font-normal leading-relaxed">
+                            Generate an architectural blueprint first. The AI Architect will analyze your project requirements and create a detailed plan including file structure, architecture, and features.
+                        </p>
+                    </div>
+                    <button
+                        onClick={onGenerateBlueprint}
+                        disabled={isGenerating}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[13px] font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-600/10 active:scale-[0.98]"
+                    >
+                        {isGenerating ? (
+                            <>
+                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Planning Architecture...
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg>
+                                Generate Blueprint (STAGE 1)
+                            </>
+                        )}
+                    </button>
+                    <p className="text-[11px] text-gray-400 font-normal">Uses the Architect Agent to plan your application</p>
+                </div>
+            </div>
+        );
+    }
 
+    // ── Blueprint exists: show the plan ───────────────
     const filePlan = blueprint.file_plan || [];
     const features = blueprint.features || [];
     const uiUx = blueprint.ui_ux_system || {};

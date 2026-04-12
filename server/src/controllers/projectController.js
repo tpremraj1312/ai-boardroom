@@ -435,3 +435,95 @@ export const exportProjectZip = async (req, res, next) => {
         next(error);
     }
 };
+
+// ── DELETE project ──────────────────────────────────────────────
+export const deleteProject = async (req, res, next) => {
+    try {
+        const project = await Project.findOneAndDelete(getAuthQuery(req, req.params.id));
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.status(200).json({ message: 'Project deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── CREATE new file in VFS ──────────────────────────────────────
+export const createNewFile = async (req, res, next) => {
+    try {
+        const { filePath, content } = req.body;
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!filePath) return res.status(400).json({ message: 'filePath is required' });
+
+        // Cannot overwrite if already exists
+        if (project.fileSystem && project.fileSystem[filePath] !== undefined) {
+            return res.status(409).json({ message: `File "${filePath}" already exists` });
+        }
+
+        if (!project.fileSystem) project.fileSystem = {};
+        project.fileSystem[filePath] = content || '';
+        project.markModified('fileSystem');
+        project.version += 1;
+        await project.save();
+
+        res.status(201).json({ message: 'File created', filePath, version: project.version });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── DELETE file from VFS ────────────────────────────────────────
+export const deleteFileFromVFS = async (req, res, next) => {
+    try {
+        const { filePath } = req.body;
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!filePath) return res.status(400).json({ message: 'filePath is required' });
+
+        if (!project.fileSystem || project.fileSystem[filePath] === undefined) {
+            return res.status(404).json({ message: `File "${filePath}" not found in project` });
+        }
+
+        delete project.fileSystem[filePath];
+        project.markModified('fileSystem');
+        project.version += 1;
+        await project.save();
+
+        res.status(200).json({ message: 'File deleted', filePath, version: project.version });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── RENAME file in VFS ──────────────────────────────────────────
+export const renameFileInVFS = async (req, res, next) => {
+    try {
+        const { oldPath, newPath } = req.body;
+        const project = await Project.findOne(getAuthQuery(req, req.params.id));
+
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (!oldPath || !newPath) return res.status(400).json({ message: 'oldPath and newPath are required' });
+
+        if (!project.fileSystem || project.fileSystem[oldPath] === undefined) {
+            return res.status(404).json({ message: `File "${oldPath}" not found in project` });
+        }
+
+        if (project.fileSystem[newPath] !== undefined) {
+            return res.status(409).json({ message: `File "${newPath}" already exists` });
+        }
+
+        // Move content from old path to new path
+        project.fileSystem[newPath] = project.fileSystem[oldPath];
+        delete project.fileSystem[oldPath];
+        project.markModified('fileSystem');
+        project.version += 1;
+        await project.save();
+
+        res.status(200).json({ message: 'File renamed', oldPath, newPath, version: project.version });
+    } catch (error) {
+        next(error);
+    }
+};
+

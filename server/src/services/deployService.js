@@ -95,10 +95,16 @@ export const deployToVercel = async (project) => {
                 timeout: 60000
             }
         );
+        console.log(response)
+        const aliases = response.data.alias || [];
+        const productionDomain = aliases.length > 0
+            ? aliases[0]
+            : `${response.data.name || projectName}.vercel.app`;
 
-        const deploymentUrl = `https://${response.data.url}`;
+        const deploymentUrl = `https://${productionDomain}`;
         return {
             url: deploymentUrl,
+            previewUrl: `https://${response.data.url}`,
             id: response.data.id,
             readyState: response.data.readyState
         };

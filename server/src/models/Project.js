@@ -88,7 +88,22 @@ const projectSchema = new mongoose.Schema({
     // Validation Pipeline — self-check report
     validationReport: { type: mongoose.Schema.Types.Mixed, default: null },
     // Debugger Agent — auto-fix log
-    debugLog: [{ type: mongoose.Schema.Types.Mixed }]
+    debugLog: [{ type: mongoose.Schema.Types.Mixed }],
+    // IDE — recently opened files for quick-open
+    lastOpenedFiles: [{ type: String }],
+    // IDE — terminal/build log entries (capped at last 200)
+    terminalLogs: [{
+        type: { type: String, enum: ['info', 'warn', 'error', 'success', 'system'], default: 'info' },
+        message: { type: String },
+        timestamp: { type: Date, default: Date.now }
+    }],
+    // IDE — per-project editor settings
+    settings: {
+        fontSize: { type: Number, default: 13 },
+        wordWrap: { type: String, default: 'on' },
+        minimap: { type: Boolean, default: false },
+        tabSize: { type: Number, default: 2 }
+    }
 }, { timestamps: true });
 
 export default mongoose.model('Project', projectSchema);
