@@ -285,81 +285,74 @@ const FullStackGenerator = () => {
                     <div className="flex-1 flex min-h-0 overflow-hidden">
 
                         {/* CODE TAB */}
-                        {activeTab === 'code' && (
-                            <>
-                                {/* File Explorer (fixed 220px) */}
-                                <div className="w-[220px] shrink-0 border-r border-board-border overflow-hidden">
-                                    <FileExplorer
-                                        fileSystem={fileSystem}
+                        <div className={activeTab === 'code' ? "flex-1 flex min-w-0 overflow-hidden" : "hidden"}>
+                            {/* File Explorer (fixed 220px) */}
+                            <div className="w-[220px] shrink-0 border-r border-board-border overflow-hidden">
+                                <FileExplorer
+                                    fileSystem={fileSystem}
+                                    activeFile={activeFile}
+                                    onSelectFile={selectFile}
+                                    onCreateFile={createFile}
+                                    onDeleteFile={deleteFileAction}
+                                    onRenameFile={renameFile}
+                                />
+                            </div>
+
+                            {/* Code Editor + Terminal */}
+                            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                                {/* Editor */}
+                                <div className={`${showTerminal ? 'flex-[7]' : 'flex-1'} min-h-0 overflow-hidden`}>
+                                    <CodeEditor
                                         activeFile={activeFile}
+                                        fileContent={fileContent}
+                                        openFiles={openFiles}
+                                        unsavedFiles={unsavedFiles}
                                         onSelectFile={selectFile}
-                                        onCreateFile={createFile}
-                                        onDeleteFile={deleteFileAction}
-                                        onRenameFile={renameFile}
+                                        onCloseFile={closeFile}
+                                        onCloseAllFiles={closeAllFiles}
+                                        onContentChange={updateFileContent}
+                                        onSave={saveCurrentFile}
                                     />
                                 </div>
-
-                                {/* Code Editor + Terminal */}
-                                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                                    {/* Editor */}
-                                    <div className={`${showTerminal ? 'flex-[7]' : 'flex-1'} min-h-0 overflow-hidden`}>
-                                        <CodeEditor
-                                            activeFile={activeFile}
-                                            fileContent={fileContent}
-                                            openFiles={openFiles}
-                                            unsavedFiles={unsavedFiles}
-                                            onSelectFile={selectFile}
-                                            onCloseFile={closeFile}
-                                            onCloseAllFiles={closeAllFiles}
-                                            onContentChange={updateFileContent}
-                                            onSave={saveCurrentFile}
+                                {/* Terminal */}
+                                {showTerminal && (
+                                    <div className="flex-[3] min-h-[120px] border-t border-board-border overflow-hidden">
+                                        <TerminalPanel
+                                            logs={terminalLogs}
+                                            isGenerating={isGenerating}
+                                            generationPhase={generationPhase}
                                         />
                                     </div>
-                                    {/* Terminal */}
-                                    {showTerminal && (
-                                        <div className="flex-[3] min-h-[120px] border-t border-board-border overflow-hidden">
-                                            <TerminalPanel
-                                                logs={terminalLogs}
-                                                isGenerating={isGenerating}
-                                                generationPhase={generationPhase}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
+                                )}
+                            </div>
+                        </div>
 
                         {/* BLUEPRINT TAB */}
-                        {activeTab === 'blueprint' && (
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <BlueprintView
-                                    blueprint={activeProject?.blueprint}
-                                    isGenerating={generationPhase === 'blueprint'}
-                                    onGenerateBlueprint={generateBlueprint}
-                                    onGenerateCode={generateCode}
-                                    hasCode={fileCount > 0}
-                                />
-                            </div>
-                        )}
+                        <div className={activeTab === 'blueprint' ? "flex-1 min-w-0 overflow-hidden" : "hidden"}>
+                            <BlueprintView
+                                blueprint={activeProject?.blueprint}
+                                isGenerating={generationPhase === 'blueprint'}
+                                onGenerateBlueprint={generateBlueprint}
+                                onGenerateCode={generateCode}
+                                hasCode={fileCount > 0}
+                            />
+                        </div>
 
                         {/* PREVIEW TAB */}
-                        {activeTab === 'preview' && (
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <LivePreview fileSystem={fileSystem} previewKey={previewKey} />
-                            </div>
-                        )}
+                        {/* We use CSS absolute hiding instead of 'display: none' so Sandpack iframe shell connection doesn't get destroyed by the browser */}
+                        <div className={activeTab === 'preview' ? "flex-1 min-w-0 overflow-hidden relative" : "absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden -z-10"}>
+                            <LivePreview fileSystem={fileSystem} previewKey={previewKey} />
+                        </div>
 
                         {/* WALKTHROUGH TAB */}
-                        {activeTab === 'walkthrough' && (
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <WalkthroughView
-                                    walkthrough={activeProject?.walkthrough}
-                                    validationReport={activeProject?.validationReport}
-                                    debugLog={activeProject?.debugLog}
-                                    projectName={activeProject?.name}
-                                />
-                            </div>
-                        )}
+                        <div className={activeTab === 'walkthrough' ? "flex-1 min-w-0 overflow-hidden" : "hidden"}>
+                            <WalkthroughView
+                                walkthrough={activeProject?.walkthrough}
+                                validationReport={activeProject?.validationReport}
+                                debugLog={activeProject?.debugLog}
+                                projectName={activeProject?.name}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
