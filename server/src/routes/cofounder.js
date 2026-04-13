@@ -10,7 +10,7 @@ const router = express.Router();
  * @desc    Get the user's co-founder memory/status
  * @access  Private
  */
-router.get('/memory', protect, async (req, res) => {
+router.get('/memory', async (req, res) => {
     try {
         const memory = await CoFounderMemory.findOne({ userId: req.user._id });
         res.json(memory || { status: 'new' });
@@ -24,7 +24,7 @@ router.get('/memory', protect, async (req, res) => {
  * @desc    Submit the psychological questionnaire
  * @access  Private
  */
-router.post('/questionnaire', protect, async (req, res) => {
+router.post('/questionnaire', async (req, res) => {
     try {
         const memory = await processQuestionnaire(req.user._id, req.body.answers);
         res.json(memory);
@@ -38,7 +38,7 @@ router.post('/questionnaire', protect, async (req, res) => {
  * @desc    Chat with the AI Co-Founder
  * @access  Private
  */
-router.post('/chat', protect, async (req, res) => {
+router.post('/chat', async (req, res) => {
     const { message, isResearch } = req.body;
     
     // Set headers for streaming
